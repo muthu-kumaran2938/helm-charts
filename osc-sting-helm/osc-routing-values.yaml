@@ -27,10 +27,6 @@ container:
 service:
   type: ClusterIP
 
-ingress:
-  enabled: true
-  port: http
-
 healthchecks:
   livenessProbe:
     httpGet:
@@ -44,6 +40,16 @@ healthchecks:
       port: manage
     initialDelaySeconds: 30
     timeoutSeconds: 5
+
+ingress:
+  enabled: true
+  host: route.example.com
+  port: http
+  className: nginx
+  tls:
+    enabled: true
+    secretName: route-service-tls
+    issuer: letsencrypt-prod
 
 serviceMonitor:
   enabled: true
@@ -151,12 +157,3 @@ configMaps:
           management.server.port=9080
           management.endpoints.web.exposure.include=health,prometheus
           logging.level.root=INFO
-ingress:
-  enabled: true
-  host: route.example.com
-  port: http
-  tls:
-    enabled: true
-    secretName: route-service-tls
-    issuer: letsencrypt-prod
-

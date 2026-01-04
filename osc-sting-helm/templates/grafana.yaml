@@ -1,14 +1,14 @@
-{{- if .Values.grafanaDashboards.enabled }}
-{{- range $name, $content := .Values.grafanaDashboards.dashboards }}
+{{- $g := .Values.grafanaDashboards | default (dict "enabled" false) }}
+{{- if $g.enabled }}
+{{- range $name, $content := $g.dashboards }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "app.fullname" $ }}-dashboard-{{ $name | trimSuffix ".json" }}
   labels:
     grafana_dashboard: "1"
-    app: {{ include "app.fullname" $ }}
   annotations:
-    grafana_folder: {{ $.Values.grafanaDashboards.folder | quote }}
+    grafana_folder: {{ $g.folder | quote }}
 data:
   {{ $name }}: |
 {{ $content | indent 4 }}

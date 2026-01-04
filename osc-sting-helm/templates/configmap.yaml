@@ -1,8 +1,8 @@
-{{- range $name, $cfg := .Values.configMaps }}
+{{- range $path, $cfg := .Values.configMaps | default (dict) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "app.fullname" $ }}-{{ $name }}
+  name: {{ include "app.fullname" $ }}-config
 data:
 {{- range $cfg.inline }}
   {{ .name }}: |

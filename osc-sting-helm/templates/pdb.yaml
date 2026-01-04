@@ -1,10 +1,11 @@
-{{- if .Values.pdb.enabled }}
+{{- $p := .Values.pdb | default (dict "enabled" false) }}
+{{- if $p.enabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ include "app.fullname" . }}
 spec:
-  minAvailable: {{ .Values.pdb.minAvailable }}
+  minAvailable: {{ $p.minAvailable | default 1 }}
   selector:
     matchLabels:
 {{ include "app.labels" . | indent 6 }}

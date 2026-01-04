@@ -7,7 +7,7 @@ metadata:
   annotations:
 {{- toYaml .Values.annotations | indent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.replicaCount | default 1 }}
   selector:
     matchLabels:
 {{ include "app.labels" . | indent 6 }}
@@ -19,27 +19,27 @@ spec:
       serviceAccountName: {{ include "app.fullname" . }}
       containers:
         - name: app
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository | default "nginx" }}:{{ .Values.image.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
           ports:
-{{- range .Values.container.ports }}
+{{- range .Values.container.ports | default (list (dict "name" "http" "containerPort" 8080 "protocol" "TCP")) }}
             - name: {{ .name }}
               containerPort: {{ .containerPort }}
-              protocol: {{ .protocol }}
+              protocol: {{ .protocol | default "TCP" }}
 {{- end }}
           resources:
-{{- toYaml .Values.resources | indent 12 }}
+{{- toYaml .Values.resources | default (dict "requests" (dict "cpu" "100m" "memory" "128Mi") "limits" (dict "cpu" "200m" "memory" "256Mi")) | indent 12 }}
           env:
-{{- toYaml .Values.env | indent 12 }}
+{{- toYaml .Values.env | default (list) | indent 12 }}
 {{- if .Values.envFromSecrets.enabled }}
           envFrom:
             - secretRef:
                 name: {{ .Values.envFromSecrets.name }}
 {{- end }}
           livenessProbe:
-{{- toYaml .Values.healthchecks.livenessProbe | indent 12 }}
+{{- toYaml .Values.healthchecks.livenessProbe | default (dict) | indent 12 }}
           readinessProbe:
-{{- toYaml .Values.healthchecks.readinessProbe | indent 12 }}
+{{- toYaml .Values.healthchecks.readinessProbe | default (dict) | indent 12 }}
 
 {{- if .Values.configMaps }}
           volumeMounts:

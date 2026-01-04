@@ -1,17 +1,16 @@
+{{- $svc := .Values.service | default (dict "type" "ClusterIP") }}
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "app.fullname" . }}
-  labels:
-{{ include "app.labels" . | indent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ $svc.type }}
   selector:
 {{ include "app.labels" . | indent 4 }}
   ports:
-{{- range .Values.container.ports }}
+{{- range .Values.container.ports | default (list (dict "name" "http" "servicePort" 80 "containerPort" 8080 "protocol" "TCP")) }}
     - name: {{ .name }}
-      port: {{ .servicePort }}
-      targetPort: {{ .containerPort }}
-      protocol: {{ .protocol }}
+      port: {{ .servicePort | default 80 }}
+      targetPort: {{ .containerPort | default 8080 }}
+      protocol: {{ .protocol | default "TCP" }}
 {{- end }}
