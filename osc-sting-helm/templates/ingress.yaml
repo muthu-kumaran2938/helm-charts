@@ -20,10 +20,10 @@ spec:
                 name: {{ include "app.fullname" . }}
                 port:
                   number: {{ $ingress.port | default 80 }}
-{{- if $ingress.tls.enabled }}
+  {{- if $ingress.tls.enabled }}
   tls:
     - hosts:
         - {{ $ingress.host | default "example.com" }}
-      secretName: {{ $ingress.tls.secretName | default (include "app.fullname" .) ~ "-tls" }}
-{{- end }}
+      secretName: {{ default (printf "%s-tls" (include "app.fullname" .)) $ingress.tls.secretName }}
+  {{- end }}
 {{- end }}
