@@ -1,5 +1,4 @@
-{{- $sm := .Values.serviceMonitor | default (dict "enabled" false) }}
-{{- if $sm.enabled }}
+{{- if .Values.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -12,20 +11,9 @@ spec:
       - {{ .Release.Namespace }}
   selector:
     matchLabels:
-{{ include "app.labels" . | indent 6 }}
+      {{- include "app.labels" . | nindent 6 }}
   endpoints:
-    - port: {{ $sm.port | default "http" }}
-      path: {{ $sm.path | default "/actuator/prometheus" }}
-      interval: {{ $sm.interval | default "30s" }}
-{{- end }}
-
-{{- $pr := .Values.prometheusRules | default (dict "enabled" false "groups" (list)) }}
-{{- if and $pr.enabled $pr.groups }}
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-metadata:
-  name: {{ include "app.fullname" . }}
-spec:
-  groups:
-{{ toYaml $pr.groups | indent 4 }}
+    - port: {{ .Values.serviceMonitor.port | default "http" }}
+      path: {{ .Values.serviceMonitor.path | default "/actuator/prometheus" }}
+      interval: {{ .Values.serviceMonitor.interval | default "30s" }}
 {{- end }}

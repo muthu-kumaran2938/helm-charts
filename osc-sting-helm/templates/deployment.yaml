@@ -3,53 +3,69 @@ kind: Deployment
 metadata:
   name: {{ include "app.fullname" . }}
   labels:
-{{ include "app.labels" . | indent 4 }}
+    {{- include "app.labels" . | nindent 4 }}
   annotations:
-{{- toYaml .Values.annotations | indent 4 }}
+    {{- toYaml .Values.annotations | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount | default 1 }}
   selector:
     matchLabels:
-{{ include "app.labels" . | indent 6 }}
+      {{- include "app.labels" . | nindent 6 }}
   template:
     metadata:
       labels:
-{{ include "app.labels" . | indent 8 }}
+        {{- include "app.labels" . | nindent 8 }}
     spec:
+      {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "app.fullname" . }}
+      {{- end }}
       containers:
         - name: app
-          image: "{{ default "nginx:latest" .Values.image.repository }}:{{ default "latest" .Values.image.tag }}"
+          image: "{{ if .Values.image.repository }}{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}{{ else }}nginx:latest{{ end }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          {{- if .Values.container.ports }}
           ports:
-{{- range .Values.container.ports | default (list (dict "name" "http" "containerPort" 8080 "servicePort" 80 "protocol" "TCP")) }}
+            {{- range .Values.container.ports }}
             - name: {{ .name }}
               containerPort: {{ .containerPort }}
               protocol: {{ .protocol | default "TCP" }}
-{{- end }}
+            {{- end }}
+          {{- else }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          {{- end }}
+          {{- if .Values.resources }}
           resources:
-{{- toYaml .Values.resources | indent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
+          {{- if .Values.env }}
           env:
-{{- toYaml .Values.env | indent 12 }}
-{{- if .Values.envFromSecrets.enabled }}
+            {{- toYaml .Values.env | nindent 12 }}
+          {{- end }}
+          {{- if .Values.envFromSecrets.enabled }}
           envFrom:
             - secretRef:
                 name: {{ .Values.envFromSecrets.name }}
-{{- end }}
+          {{- end }}
+          {{- if .Values.healthchecks.livenessProbe }}
           livenessProbe:
-{{- toYaml .Values.healthchecks.livenessProbe | indent 12 }}
+            {{- toYaml .Values.healthchecks.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.healthchecks.readinessProbe }}
           readinessProbe:
-{{- toYaml .Values.healthchecks.readinessProbe | indent 12 }}
-{{- if .Values.configMaps }}
-          volumeMounts:
-{{- range $name, $_ := .Values.configMaps }}
-            - name: {{ $name }}
-              mountPath: /spring/config/{{ $name }}
-{{- end }}
+            {{- toYaml .Values.healthchecks.readinessProbe | nindent 12 }}
+          {{- end }}
+      {{- if .Values.configMaps }}
       volumes:
-{{- range $name, $_ := .Values.configMaps }}
+        {{- range $name, $_ := .Values.configMaps }}
         - name: {{ $name }}
           configMap:
             name: {{ include "app.fullname" $ }}-{{ $name }}
-{{- end }}
-{{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.configMaps }}
+      volumeMounts:
+        {{- range $name, $_ := .Values.configMaps }}
+        - name:
