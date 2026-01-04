@@ -8,8 +8,9 @@ spec:
   selector:
 {{ include "app.labels" . | indent 4 }}
   ports:
-{{- range .Values.container.ports | default (list (dict "name" "http" "servicePort" 80 "containerPort" 8080 "protocol" "TCP")) }}
-    - name: {{ .name }}
+{{- $ports := .Values.container.ports | default (list (dict "name" "http" "servicePort" 80 "containerPort" 8080 "protocol" "TCP")) }}
+{{- range $ports }}
+    - name: {{ .name | default "http" }}
       port: {{ .servicePort | default 80 }}
       targetPort: {{ .containerPort | default 8080 }}
       protocol: {{ .protocol | default "TCP" }}
