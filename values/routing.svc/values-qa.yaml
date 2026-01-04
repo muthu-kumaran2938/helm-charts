@@ -1,0 +1,53 @@
+replicaCount: 1
+
+image:
+  repository: myacr.io/route-service
+  tag: "1.0.3"
+
+container:
+  ports:
+    - name: http
+      containerPort: 8080
+      serviceport: 80
+      protocol: TCP
+    - name: manage
+      containerPort: 9080
+      serviceport: 80
+      protocol: TCP
+
+service:
+  type: ClusterIP
+
+ingress:
+  internal:
+    enable: true
+    port: http
+
+serviceMonitor:
+  enabled: true
+  path: /actuator/prometheus
+  port: manage
+
+prometheusRules:
+  groups:
+    - name: route-alerts
+      rules:
+        - alert: InstanceDown
+          expr: up{job="route-service"} == 0
+          for: 5m
+          labels:
+            severity: warning
+
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  secretStore: aws-secrets-manager
+  data:
+    - secretKey: DB_PASSWORD
+      remoteRef:
+        key: prod/route-service/db
+        property: password
+
+envFromSecrets:
+  enabled: true
+  name: route-service-secret

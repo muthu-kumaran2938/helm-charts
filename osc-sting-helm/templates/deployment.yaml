@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" . }}
+  labels:
+{{ include "app.labels" . | indent 4 }}
+  annotations:
+{{- toYaml .Values.annotations | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "app.labels" . | indent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "app.labels" . | indent 8 }}
+    spec:
+      serviceAccountName: {{ include "app.fullname" . }}
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+{{- range .Values.container.ports }}
+            - name: {{ .name }}
+              containerPort: {{ .containerPort }}
+              protocol: {{ .protocol }}
+{{- end }}
+          resources:
+{{- toYaml .Values.resources | indent 12 }}
+          env:
+{{- toYaml .Values.env | indent 12 }}
+{{- if .Values.envFromSecrets.enabled }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.envFromSecrets.name }}
+{{- end }}
+          livenessProbe:
+{{- toYaml .Values.healthchecks.livenessProbe | indent 12 }}
+          readinessProbe:
+{{- toYaml .Values.healthchecks.readinessProbe | indent 12 }}
+
+{{- if .Values.configMaps }}
+          volumeMounts:
+{{- range $name, $_ := .Values.configMaps }}
+            - name: {{ $name }}
+              mountPath: /spring/config/{{ $name }}
+{{- end }}
+      volumes:
+{{- range $name, $_ := .Values.configMaps }}
+        - name: {{ $name }}
+          configMap:
+            name: {{ include "app.fullname" $ }}-{{ $name }}
+{{- end }}
+{{- end }}

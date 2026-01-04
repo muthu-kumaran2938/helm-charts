@@ -1,0 +1,79 @@
+replicaCount: 1
+
+image:
+  repository: myacr.io/route-service
+  tag: "dev"
+  pullPolicy: Always
+
+resources:
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+  limits:
+    cpu: "600m"
+    memory: "512Mi"
+
+container:
+  ports:
+    - name: http
+      containerPort: 8080
+      servicePort: 80
+      protocol: TCP
+    - name: manage
+      containerPort: 9080
+      servicePort: 9080
+      protocol: TCP
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: true
+  port: http
+
+healthchecks:
+  livenessProbe:
+    httpGet:
+      path: /actuator/health
+      port: manage
+    initialDelaySeconds: 60
+  readinessProbe:
+    httpGet:
+      path: /actuator/health
+      port: manage
+    initialDelaySeconds: 30
+
+serviceMonitor:
+  enabled: false
+  path: /actuator/prometheus
+  port: manage
+  interval: 15s
+
+prometheusRules:
+  enabled: false
+  groups: []
+
+hpa:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  cpu: 70
+  memory: 80
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+configMaps: {}
+
+env: []
+
+labels:
+  app: route-service
+  env: dev
+
+annotations: {}

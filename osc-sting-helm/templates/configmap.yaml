@@ -1,0 +1,12 @@
+{{- range $name, $cfg := .Values.configMaps }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "app.fullname" $ }}-{{ $name }}
+data:
+{{- range $cfg.inline }}
+  {{ .name }}: |
+{{ .content | indent 4 }}
+{{- end }}
+---
+{{- end }}
